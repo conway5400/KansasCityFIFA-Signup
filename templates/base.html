@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sign up for the Kansas City FIFA Fan Fest - World Cup celebration">
+    <meta name="keywords" content="FIFA, World Cup, Kansas City, Fan Fest, Soccer, Football">
+    
+    <!-- Open Graph meta tags -->
+    <meta property="og:title" content="Kansas City FIFA Fan Fest Signup">
+    <meta property="og:description" content="Join us for an amazing FIFA Fan Fest experience in Kansas City!">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="{{ url_for('static', filename='images/og-image.jpg') }}">
+    
+    <title>{% block title %}Kansas City FIFA Fan Fest{% endblock %}</title>
+    
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
+    
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Skip link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <h1>⚽ KC FIFA Fan Fest</h1>
+            </div>
+        </header>
+        
+        <main id="main-content" class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+        
+        <footer class="footer">
+            <p>&copy; 2024 Kansas City FIFA Fan Fest. All rights reserved.</p>
+            <p><a href="/health" class="footer-link">System Status</a></p>
+        </footer>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+    
+    <!-- Performance monitoring (if enabled) -->
+    {% if config.METRICS_ENABLED %}
+    <script>
+        // Basic performance tracking
+        window.addEventListener('load', function() {
+            const perfData = performance.getEntriesByType('navigation')[0];
+            if (perfData) {
+                console.log('Page load time:', perfData.loadEventEnd - perfData.fetchStart, 'ms');
+            }
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

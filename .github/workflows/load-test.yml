@@ -1,0 +1,74 @@
+name: Load Testing
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Target URL to test'
+        required: true
+        default: 'https://your-app.herokuapp.com'
+      users:
+        description: 'Number of concurrent users'
+        required: true
+        default: '100'
+      spawn_rate:
+        description: 'Users spawned per second'
+        required: true
+        default: '10'
+      duration:
+        description: 'Test duration (e.g., 5m, 300s)'
+        required: true
+        default: '5m'
+
+jobs:
+  load-test:
+    name: Run Load Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install locust
+
+    - name: Run Locust load test
+      run: |
+        locust -f tests/load_test.py \
+          --headless \
+          --users ${{ github.event.inputs.users }} \
+          --spawn-rate ${{ github.event.inputs.spawn_rate }} \
+          --run-time ${{ github.event.inputs.duration }} \
+          --host ${{ github.event.inputs.target_url }} \
+          --html load_test_report.html \
+          --csv load_test_results
+
+    - name: Upload load test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: load-test-results
+        path: |
+          load_test_report.html
+          load_test_results_*.csv
+
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const results = fs.readFileSync('load_test_results_stats.csv', 'utf8');
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## Load Test Results\n\nTarget: ${{ github.event.inputs.target_url }}\nUsers: ${{ github.event.inputs.users }}\n\n\`\`\`\n${results}\n\`\`\``
+          });
+

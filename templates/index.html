@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Kansas City FIFA Fan Fest{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <h2 class="hero-title">Join the Ultimate FIFA Experience! 🎉</h2>
+        <p class="hero-subtitle">
+            Sign up now for the Kansas City FIFA Fan Fest - where passion meets celebration!
+        </p>
+    </div>
+</div>
+
+<div class="signup-section">
+    <div class="form-container">
+        <div class="form-header">
+            <h3>Reserve Your Spot</h3>
+            <p>Fill out the form below to secure your place at this amazing event.</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error" role="alert">
+            <strong>⚠️ Error:</strong> {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('signup') }}" class="signup-form" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <!-- Name Field -->
+            <div class="form-group">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-input", placeholder="Enter your full name", autocomplete="name") }}
+                {% if form.name.errors %}
+                    <div class="form-error">
+                        {% for error in form.name.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Email Field -->
+            <div class="form-group">
+                {{ form.email.label(class="form-label") }}
+                {{ form.email(class="form-input", placeholder="your.email@example.com", autocomplete="email") }}
+                {% if form.email.errors %}
+                    <div class="form-error">
+                        {% for error in form.email.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Phone Field (Optional) -->
+            <div class="form-group">
+                {{ form.phone.label(class="form-label") }}
+                <div class="form-hint">Optional - for SMS updates about the event</div>
+                {{ form.phone(class="form-input", placeholder="+1 (555) 123-4567", autocomplete="tel") }}
+                {% if form.phone.errors %}
+                    <div class="form-error">
+                        {% for error in form.phone.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Zip Code Field -->
+            <div class="form-group">
+                {{ form.zip_code.label(class="form-label") }}
+                {{ form.zip_code(class="form-input", placeholder="64111", autocomplete="postal-code", maxlength="10") }}
+                {% if form.zip_code.errors %}
+                    <div class="form-error">
+                        {% for error in form.zip_code.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Events Interest Field -->
+            <div class="form-group">
+                {{ form.events_interested.label(class="form-label") }}
+                <div class="form-hint">Select all events that interest you (check multiple)</div>
+                <div class="checkbox-group">
+                    {% for choice in form.events_interested %}
+                        <div class="checkbox-item">
+                            {{ choice(class="checkbox-input") }}
+                            {{ choice.label(class="checkbox-label") }}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if form.events_interested.errors %}
+                    <div class="form-error">
+                        {% for error in form.events_interested.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Submit Button -->
+            <div class="form-group">
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <span class="btn-text">Sign Me Up! 🚀</span>
+                    <span class="btn-loading" style="display: none;">
+                        <span class="spinner"></span>
+                        Processing...
+                    </span>
+                </button>
+            </div>
+
+            <!-- Terms and Privacy -->
+            <div class="form-footer">
+                <p class="terms-text">
+                    By signing up, you agree to receive event updates and information. 
+                    You can unsubscribe at any time by replying STOP to any text message.
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Info Section -->
+<div class="info-section">
+    <div class="info-grid">
+        <div class="info-card">
+            <div class="info-icon">⚽</div>
+            <h4>World Cup Experience</h4>
+            <p>Watch games on giant screens with fellow fans from around the world</p>
+        </div>
+        
+        <div class="info-card">
+            <div class="info-icon">🎮</div>
+            <h4>Interactive Games</h4>
+            <p>Skills challenges, penalty shootouts, and FIFA gaming tournaments</p>
+        </div>
+        
+        <div class="info-card">
+            <div class="info-icon">🍔</div>
+            <h4>Food & Drinks</h4>
+            <p>International food trucks and beverage gardens representing different cultures</p>
+        </div>
+        
+        <div class="info-card">
+            <div class="info-icon">🎵</div>
+            <h4>Live Entertainment</h4>
+            <p>Live music, DJ sets, and cultural performances throughout the event</p>
+        </div>
+    </div>
+</div>
+
+<!-- FAQ Section -->
+<div class="faq-section">
+    <h3>Frequently Asked Questions</h3>
+    
+    <div class="faq-item">
+        <h4>When is the Kansas City FIFA Fan Fest?</h4>
+        <p>The event runs during the FIFA World Cup season. Specific dates and schedules will be sent to registered participants.</p>
+    </div>
+    
+    <div class="faq-item">
+        <h4>Is registration free?</h4>
+        <p>Yes! Registration for the Fan Fest is completely free. Some premium experiences may have optional add-ons.</p>
+    </div>
+    
+    <div class="faq-item">
+        <h4>Do I need to bring anything?</h4>
+        <p>Just bring yourself and your team spirit! We'll provide everything else for an amazing experience.</p>
+    </div>
+    
+    <div class="faq-item">
+        <h4>Can I change my event selections later?</h4>
+        <p>Contact us if you need to update your preferences. We'll do our best to accommodate changes.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Form submission handling with loading state
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.signup-form');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = submitBtn.querySelector('.btn-text');
+        const btnLoading = submitBtn.querySelector('.btn-loading');
+        
+        form.addEventListener('submit', function(e) {
+            // Show loading state
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'flex';
+            submitBtn.disabled = true;
+            
+            // Basic client-side validation
+            let hasError = false;
+            const requiredFields = ['name', 'email', 'zip_code'];
+            
+            requiredFields.forEach(fieldName => {
+                const field = form.querySelector(`[name="${fieldName}"]`);
+                if (!field.value.trim()) {
+                    hasError = true;
+                }
+            });
+            
+            // Check if at least one event is selected
+            const eventCheckboxes = form.querySelectorAll('input[name="events_interested"]:checked');
+            if (eventCheckboxes.length === 0) {
+                hasError = true;
+            }
+            
+            // If validation fails, restore button state
+            if (hasError) {
+                e.preventDefault();
+                btnText.style.display = 'block';
+                btnLoading.style.display = 'none';
+                submitBtn.disabled = false;
+                
+                // Show validation messages (browser will handle this)
+                return;
+            }
+            
+            // Track form submission (basic analytics)
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'form_submit', {
+                    'event_category': 'signup',
+                    'event_label': 'fifa_signup_form'
+                });
+            }
+        });
+        
+        // Reset button state if user navigates back
+        window.addEventListener('pageshow', function(e) {
+            if (e.persisted) {
+                btnText.style.display = 'block';
+                btnLoading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+        
+        // Phone number formatting
+        const phoneInput = form.querySelector('[name="phone"]');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length >= 6) {
+                    value = value.replace(/(\d{3})(\d{3})(\d{0,4})/, '($1) $2-$3');
+                } else if (value.length >= 3) {
+                    value = value.replace(/(\d{3})(\d{0,3})/, '($1) $2');
+                }
+                e.target.value = value;
+            });
+        }
+        
+        // Zip code formatting
+        const zipInput = form.querySelector('[name="zip_code"]');
+        if (zipInput) {
+            zipInput.addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/\D/g, '').substring(0, 10);
+            });
+        }
+    });
+</script>
+{% endblock %}

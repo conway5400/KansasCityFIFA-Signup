@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Error - Kansas City FIFA Fan Fest{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-container">
+        <div class="error-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+        </div>
+        
+        <h2 class="error-title">Oops! Something went wrong</h2>
+        
+        <p class="error-message">
+            We're experiencing high traffic right now. Please try again in a moment.
+        </p>
+        
+        <div class="error-actions">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                ← Try Again
+            </a>
+            
+            <a href="/health" class="btn btn-secondary">
+                Check System Status
+            </a>
+        </div>
+        
+        <div class="error-help">
+            <h3>Need immediate assistance?</h3>
+            <p>If you continue to experience issues, please contact our support team:</p>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <strong>Email:</strong> support@kcfifafanfest.com
+                </div>
+                {% if config.TWILIO_FROM_NUMBER %}
+                <div class="contact-item">
+                    <strong>Text:</strong> {{ config.TWILIO_FROM_NUMBER }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

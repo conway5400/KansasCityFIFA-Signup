@@ -1,0 +1,91 @@
+{
+  "name": "Kansas City FIFA Signup",
+  "description": "High-performance signup system for KC FIFA Fan Fest - built for scale",
+  "repository": "https://github.com/conway5400/KansasCityFIFA-Signup",
+  "logo": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/26bd.svg",
+  "keywords": [
+    "flask",
+    "python",
+    "postgresql",
+    "redis",
+    "celery",
+    "twilio",
+    "sms",
+    "scalable",
+    "high-performance"
+  ],
+  "stack": "heroku-22",
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    },
+    "worker": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini",
+      "as": "DATABASE"
+    },
+    {
+      "plan": "heroku-redis:mini",
+      "as": "REDIS"
+    }
+  ],
+  "env": {
+    "FLASK_ENV": {
+      "description": "Flask environment (production for Heroku)",
+      "value": "production",
+      "required": true
+    },
+    "SECRET_KEY": {
+      "description": "Secret key for session encryption",
+      "generator": "secret",
+      "required": true
+    },
+    "TWILIO_ACCOUNT_SID": {
+      "description": "Twilio Account SID for SMS",
+      "required": true
+    },
+    "TWILIO_AUTH_TOKEN": {
+      "description": "Twilio Auth Token",
+      "required": true
+    },
+    "TWILIO_FROM_NUMBER": {
+      "description": "Twilio phone number (E.164 format: +15551234567)",
+      "required": true
+    },
+    "LOG_LEVEL": {
+      "description": "Logging level",
+      "value": "INFO",
+      "required": false
+    },
+    "METRICS_ENABLED": {
+      "description": "Enable metrics endpoint",
+      "value": "true",
+      "required": false
+    },
+    "DATABASE_POOL_SIZE": {
+      "description": "PostgreSQL connection pool size",
+      "value": "20",
+      "required": false
+    },
+    "DATABASE_MAX_OVERFLOW": {
+      "description": "PostgreSQL max overflow connections",
+      "value": "30",
+      "required": false
+    }
+  },
+  "scripts": {
+    "postdeploy": "flask db upgrade"
+  }
+}
+

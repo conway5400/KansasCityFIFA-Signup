@@ -269,6 +269,9 @@ def register_routes(app, celery):
             # Ensure session is created so Flask-WTF can store CSRF token
             # Flask only sets session cookie when session is modified
             session.permanent = True
+            # Touch session to ensure cookie is set
+            if '_csrf_token' not in session:
+                session['_csrf_token'] = None  # Will be set by Flask-WTF
             
             form = SignupForm()
             

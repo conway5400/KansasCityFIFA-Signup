@@ -243,9 +243,9 @@
     };
 
     // Performance monitoring
-    const performance = {
+    const performanceMonitor = {
         init: function() {
-            if (!window.performance || !window.performance.timing) return;
+            if (!window.performance || !window.performance.getEntriesByType) return;
 
             window.addEventListener('load', () => {
                 setTimeout(() => {
@@ -255,7 +255,10 @@
         },
 
         reportMetrics: function() {
-            const perfData = performance.getEntriesByType('navigation')[0];
+            if (!window.performance || !window.performance.getEntriesByType) return;
+            const perfEntries = window.performance.getEntriesByType('navigation');
+            if (!perfEntries || perfEntries.length === 0) return;
+            const perfData = perfEntries[0];
             if (!perfData) return;
 
             const metrics = {
@@ -334,7 +337,7 @@
     function init() {
         formHandler.init();
         analytics.init();
-        performance.init();
+        performanceMonitor.init();
         accessibility.init();
     }
 

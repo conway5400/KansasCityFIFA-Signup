@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Login - Kansas City FIFA Fan Fest{% endblock %}
+
+{% block content %}
+<div class="admin-login-page">
+    <div class="admin-login-container">
+        <div class="admin-login-header">
+            <h1>Admin Login</h1>
+            <p>Kansas City FIFA Fan Fest</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error" role="alert">
+            <strong>Error:</strong> {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('admin_login') }}" class="admin-login-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group">
+                {{ form.username.label(class="form-label") }}
+                {{ form.username(class="form-input", autocomplete="username", autofocus=true) }}
+                {% if form.username.errors %}
+                    <div class="form-error">
+                        {% for error in form.username.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-input", autocomplete="current-password") }}
+                {% if form.password.errors %}
+                    <div class="form-error">
+                        {% for error in form.password.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="submit-btn">
+                    <span class="btn-text">Login</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

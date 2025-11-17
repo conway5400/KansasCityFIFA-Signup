@@ -5,7 +5,8 @@ Designed for high-traffic loads (hundreds of thousands of hits)
 import os
 import logging
 from datetime import datetime
-from flask import Flask, request, render_template, jsonify, redirect, url_for
+from flask import Flask, request, render_template, jsonify, redirect, url_for, session, flash
+from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_wtf import FlaskForm
@@ -18,7 +19,7 @@ import redis
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
-from wtforms import StringField, TextAreaField, SelectMultipleField, widgets
+from wtforms import StringField, TextAreaField, SelectMultipleField, PasswordField, widgets
 from wtforms.validators import DataRequired, Email, Length
 from config import config
 
@@ -218,6 +219,22 @@ class SignupForm(FlaskForm):
                                          validators=[DataRequired(message="Please select at least one event")])
 
 
+class AdminLoginForm(FlaskForm):
+    """Admin login form."""
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+
+
+def admin_required(f):
+    """Decorator to require admin authentication."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin_logged_in'):
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 def register_routes(app, celery):
     """Register all application routes."""
     
@@ -319,7 +336,7 @@ def register_routes(app, celery):
         """Health check endpoint for load balancers."""
         try:
             # Quick database check
-            from sqlalchemy import text
+            from sqlalchemy import text, or_
             db.session.execute(text('SELECT 1'))
             return jsonify({'status': 'healthy', 'timestamp': datetime.utcnow().isoformat()})
         except Exception as e:
@@ -346,6 +363,104 @@ def register_routes(app, celery):
         except Exception as e:
             logger.error("metrics_error", error=str(e))
             return jsonify({'error': 'Metrics unavailable'}), 500
+    
+    # Admin Routes
+    @app.route('/admin/login', methods=['GET', 'POST'])
+    @limiter.limit("10 per minute")
+    def admin_login():
+        """Admin login page."""
+        if session.get('admin_logged_in'):
+            return redirect(url_for('admin_dashboard'))
+        
+        form = AdminLoginForm()
+        error = None
+        
+        if form.validate_on_submit():
+            username = form.username.data.strip()
+            password = form.password.data
+            
+            if (username == app.config['ADMIN_USERNAME'] and 
+                password == app.config['ADMIN_PASSWORD']):
+                session['admin_logged_in'] = True
+                session.permanent = True
+                logger.info("admin_login_success", username=username, ip=request.remote_addr)
+                return redirect(url_for('admin_dashboard'))
+            else:
+                error = "Invalid username or password"
+                logger.warning("admin_login_failed", username=username, ip=request.remote_addr)
+        
+        return render_template('admin/login.html', form=form, error=error)
+    
+    @app.route('/admin/dashboard')
+    @admin_required
+    @limiter.limit("30 per minute")
+    def admin_dashboard():
+        """Admin dashboard showing all signups."""
+        try:
+            # Get pagination parameters
+            page = request.args.get('page', 1, type=int)
+            per_page = request.args.get('per_page', 50, type=int)
+            per_page = min(per_page, 100)  # Max 100 per page
+            
+            # Get filter parameters
+            search = request.args.get('search', '').strip()
+            zip_filter = request.args.get('zip', '').strip()
+            
+            # Build query
+            query = Signup.query
+            
+            if search:
+                from sqlalchemy import or_
+                query = query.filter(
+                    or_(
+                        Signup.name.ilike(f'%{search}%'),
+                        Signup.email.ilike(f'%{search}%')
+                    )
+                )
+            
+            if zip_filter:
+                query = query.filter(Signup.zip_code == zip_filter)
+            
+            # Order by most recent first
+            query = query.order_by(Signup.created_at.desc())
+            
+            # Paginate
+            pagination = query.paginate(
+                page=page,
+                per_page=per_page,
+                error_out=False
+            )
+            
+            # Get statistics
+            total_signups = Signup.query.count()
+            today_signups = Signup.query.filter(
+                Signup.created_at >= datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+            ).count()
+            
+            sms_sent_count = Signup.query.filter(Signup.sms_sent == True).count()
+            
+            return render_template(
+                'admin/dashboard.html',
+                signups=pagination.items,
+                pagination=pagination,
+                total_signups=total_signups,
+                today_signups=today_signups,
+                sms_sent_count=sms_sent_count,
+                search=search,
+                zip_filter=zip_filter
+            )
+        except Exception as e:
+            logger.error("admin_dashboard_error", error=str(e))
+            return render_template('error.html'), 500
+    
+    @app.route('/admin/logout')
+    @admin_required
+    def admin_logout():
+        """Admin logout."""
+        logger.info("admin_logout", username=session.get('admin_username'))
+        session.pop('admin_logged_in', None)
+        flash('You have been logged out.', 'info')
+        return redirect(url_for('admin_login'))
     
     # Celery Tasks
     @celery.task(name='send_sms_async')

@@ -80,6 +80,10 @@ class Config:
     # Monitoring
     METRICS_ENABLED = os.environ.get('METRICS_ENABLED', 'true').lower() == 'true'
     SENTRY_DSN = os.environ.get('SENTRY_DSN')
+    
+    # Admin Configuration
+    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD') or 'admin123'  # Change in production!
+    ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
 
 
 class DevelopmentConfig(Config):

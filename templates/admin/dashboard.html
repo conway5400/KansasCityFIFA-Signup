@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Kansas City FIFA Fan Fest{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="admin-header">
+        <div class="admin-header-content">
+            <h1>Admin Dashboard</h1>
+            <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">Logout</a>
+        </div>
+    </div>
+
+    <div class="admin-stats">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_signups }}</div>
+            <div class="stat-label">Total Signups</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ today_signups }}</div>
+            <div class="stat-label">Today's Signups</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ sms_sent_count }}</div>
+            <div class="stat-label">SMS Sent</div>
+        </div>
+    </div>
+
+    <div class="admin-filters">
+        <form method="GET" action="{{ url_for('admin_dashboard') }}" class="filter-form">
+            <div class="filter-group">
+                <input type="text" 
+                       name="search" 
+                       value="{{ search }}" 
+                       placeholder="Search by name or email..." 
+                       class="form-input">
+            </div>
+            <div class="filter-group">
+                <input type="text" 
+                       name="zip" 
+                       value="{{ zip_filter }}" 
+                       placeholder="Filter by zip code..." 
+                       class="form-input">
+            </div>
+            <div class="filter-group">
+                <button type="submit" class="btn btn-primary">Filter</button>
+                {% if search or zip_filter %}
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Zip Code</th>
+                    <th>Events</th>
+                    <th>SMS Sent</th>
+                    <th>Registered</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if signups %}
+                    {% for signup in signups %}
+                    <tr>
+                        <td>{{ signup.id }}</td>
+                        <td>{{ signup.name }}</td>
+                        <td>{{ signup.email }}</td>
+                        <td>{{ signup.phone or '-' }}</td>
+                        <td>{{ signup.zip_code }}</td>
+                        <td>
+                            <div class="events-list">
+                                {% for event in signup.events_interested %}
+                                    <span class="event-tag">{{ event }}</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if signup.sms_sent %}
+                                <span class="badge badge-success">Yes</span>
+                            {% else %}
+                                <span class="badge badge-secondary">No</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ signup.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="no-data">No signups found.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <div class="admin-pagination">
+        {% if pagination.has_prev %}
+            <a href="{{ url_for('admin_dashboard', page=pagination.prev_num, search=search, zip=zip_filter) }}" 
+               class="btn btn-secondary">Previous</a>
+        {% endif %}
+        
+        <span class="pagination-info">
+            Page {{ pagination.page }} of {{ pagination.pages }} 
+            ({{ pagination.total }} total)
+        </span>
+        
+        {% if pagination.has_next %}
+            <a href="{{ url_for('admin_dashboard', page=pagination.next_num, search=search, zip=zip_filter) }}" 
+               class="btn btn-secondary">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

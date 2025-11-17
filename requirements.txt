@@ -51,6 +51,7 @@ pytest-cov==4.1.0  # Code coverage reporting
 
 # Load Testing Tool (Run locally against Heroku)
 locust==2.18.3  # Load testing framework - use: locust -f tests/load_test.py --host=https://your-app.herokuapp.com
+beautifulsoup4==4.12.3  # HTML parsing for load tests (CSRF token extraction)
 
 # ============================================================================
 # Development Tools (Optional, for code quality)

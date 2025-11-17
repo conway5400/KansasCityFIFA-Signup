@@ -1,13 +1,13 @@
 """
-Load testing with Locust for high-traffic scenarios.
+Load testing with Locust for signup form testing.
 
 Usage:
-    locust -f tests/load_test.py --host=http://localhost:5000
+    locust -f tests/load_test.py --host=https://kc-fifa-signup-fc03fc97207f.herokuapp.com
     
-    # Or with specific parameters:
-    locust -f tests/load_test.py --users 1000 --spawn-rate 100 --run-time 5m --host=http://localhost:5000
+    Then open http://localhost:8089 in your browser to control the test.
 """
 from locust import HttpUser, task, between, events
+from bs4 import BeautifulSoup
 import random
 import logging
 
@@ -41,111 +41,106 @@ ZIP_CODES = ['64111', '64112', '64113', '64114', '64115', '64116', '64117', '641
 class SignupUser(HttpUser):
     """Simulates a user signing up for the FIFA Fan Fest."""
     
-    # Wait between 1 and 3 seconds between tasks
-    wait_time = between(1, 3)
+    # Wait between 2 and 5 seconds between tasks (realistic user behavior)
+    wait_time = between(2, 5)
     
     def on_start(self):
         """Called when a simulated user starts."""
-        self.csrf_token = None
-        logger.info("User started")
+        # Locust's HttpUser maintains cookies automatically between requests
+        # We don't need to store them manually - each user gets a fresh session
+        pass
+    
+    @task(3)
+    def view_signup_page(self):
+        """View the signup form page."""
+        response = self.client.get("/", name="GET / (View Signup Form)")
+        if response.status_code != 200:
+            logger.warning(f"Failed to load signup page: {response.status_code}")
     
     @task(10)
-    def view_signup_page(self):
-        """View the signup form page (most common action)."""
-        with self.client.get("/", catch_response=True) as response:
-            if response.status_code == 200:
-                # Extract CSRF token if present
-                if b'csrf_token' in response.content:
-                    # Simple extraction (in production, use proper HTML parsing)
-                    try:
-                        content = response.content.decode('utf-8')
-                        start = content.find('name="csrf_token" value="') + len('name="csrf_token" value="')
-                        end = content.find('"', start)
-                        if start > 0 and end > 0:
-                            self.csrf_token = content[start:end]
-                    except Exception as e:
-                        logger.warning(f"Could not extract CSRF token: {e}")
-                
-                response.success()
-            else:
-                response.failure(f"Got status code {response.status_code}")
-    
-    @task(5)
     def submit_signup_form(self):
-        """Submit a signup form (less common than just viewing)."""
-        # Generate random user data
+        """Submit a signup form - this is the main action we're testing."""
+        # Always get a fresh form page right before submitting
+        # This ensures the CSRF token and session cookie match
+        form_response = self.client.get("/", name="GET / (Get Form for CSRF)")
+        if form_response.status_code != 200:
+            logger.warning(f"Failed to get form page: {form_response.status_code}")
+            return
+        
+        # Extract CSRF token from the fresh form
+        try:
+            soup = BeautifulSoup(form_response.text, 'html.parser')
+            csrf_input = soup.find('input', {'name': 'csrf_token'})
+            if not csrf_input or not csrf_input.get('value'):
+                logger.warning("Could not find CSRF token in form")
+                return
+            csrf_token = csrf_input['value']
+        except Exception as e:
+            logger.warning(f"Error parsing CSRF token: {e}")
+            return
+        
+        # Generate unique user data
         first_name = random.choice(FIRST_NAMES)
         last_name = random.choice(LAST_NAMES)
         name = f"{first_name} {last_name}"
-        email = f"{first_name.lower()}.{last_name.lower()}.{random.randint(1000, 9999)}@example.com"
+        # Use timestamp + random to ensure unique emails
+        import time
+        email = f"loadtest.{int(time.time())}.{random.randint(1000, 9999)}.{first_name.lower()}.{last_name.lower()}@loadtest.example.com"
         phone = f"555{random.randint(1000000, 9999999)}"
         zip_code = random.choice(ZIP_CODES)
         
-        # Select 1-4 random events
-        num_events = random.randint(1, 4)
-        events_interested = random.sample(EVENTS, num_events)
+        # Select 1-4 random events (must match exact event names from form)
+        num_events = random.randint(1, min(4, len(EVENTS)))
+        selected_events = random.sample(EVENTS, num_events)
         
-        form_data = {
-            'name': name,
-            'email': email,
-            'phone': phone,
-            'zip_code': zip_code,
-            'events_interested': events_interested,
+        # Build form data
+        # Flask-WTF MultiCheckboxField expects multiple values with the same name
+        # We'll use a list of tuples or send multiple values
+        form_data = [
+            ('csrf_token', csrf_token),
+            ('name', name),
+            ('email', email),
+            ('phone', phone),  # Optional, but we'll include it
+            ('zip_code', zip_code),
+        ]
+        
+        # Add each selected event - Flask-WTF expects multiple values with same name
+        for event in selected_events:
+            form_data.append(('events_interested', event))
+        
+        headers = {
+            'Referer': f'{self.host}/',
         }
         
-        if self.csrf_token:
-            form_data['csrf_token'] = self.csrf_token
-        
+        # Locust's HttpUser automatically maintains cookies between requests
+        # The session cookie from the GET request above will be included automatically
         with self.client.post(
             "/signup",
             data=form_data,
-            allow_redirects=False,
-            catch_response=True
+            headers=headers,
+            catch_response=True,
+            name="POST /signup (Submit Form)"
         ) as response:
-            if response.status_code in [200, 302]:
-                response.success()
+            # Check for successful submission (redirect to success page)
+            if response.status_code == 302:
+                # Check if redirect location contains 'success'
+                location = response.headers.get('Location', '')
+                if 'success' in location.lower():
+                    response.success()
+                    logger.info(f"Successfully submitted signup for {email}")
+                else:
+                    response.failure(f"Unexpected redirect location: {location}")
+            elif response.status_code == 200:
+                # Might be showing form again with errors
+                if 'error' in response.text.lower() or 'already been registered' in response.text.lower():
+                    response.failure("Form submission returned error page")
+                else:
+                    # Could be success page shown directly
+                    response.success()
             elif response.status_code == 429:
-                # Rate limit hit - this is expected under load
-                response.failure("Rate limit hit (expected under high load)")
+                response.failure("Rate limit exceeded (429)")
             else:
-                response.failure(f"Got status code {response.status_code}")
-    
-    @task(1)
-    def check_health(self):
-        """Check the health endpoint."""
-        with self.client.get("/health", catch_response=True) as response:
-            if response.status_code == 200:
-                try:
-                    json_data = response.json()
-                    if json_data.get('status') == 'healthy':
-                        response.success()
-                    else:
-                        response.failure("Health check returned unhealthy status")
-                except Exception as e:
-                    response.failure(f"Could not parse health check response: {e}")
-            else:
-                response.failure(f"Health check failed with status {response.status_code}")
-    
-    @task(1)
-    def check_metrics(self):
-        """Check the metrics endpoint."""
-        with self.client.get("/metrics", catch_response=True) as response:
-            if response.status_code in [200, 404]:
-                # 404 is acceptable if metrics are disabled
-                response.success()
-            else:
-                response.failure(f"Metrics endpoint returned {response.status_code}")
-
-
-class BurstTrafficUser(HttpUser):
-    """Simulates burst traffic patterns (sudden spikes)."""
-    
-    wait_time = between(0.1, 0.5)  # Much faster requests
-    
-    @task
-    def rapid_page_views(self):
-        """Rapidly view the signup page."""
-        self.client.get("/", name="/rapid_view")
+                response.failure(f"Unexpected status code: {response.status_code}")
 
 
 @events.test_start.add_listener
@@ -176,17 +171,3 @@ def on_test_stop(environment, **kwargs):
             logger.info(f"Max response time: {environment.stats.total.max_response_time:.2f}ms")
     
     logger.info("=" * 80)
-
-
-# Load test scenarios for different traffic patterns
-class SteadyTrafficUser(SignupUser):
-    """Simulates steady, consistent traffic."""
-    wait_time = between(2, 5)
-    weight = 7  # 70% of users
-
-
-class PeakTrafficUser(SignupUser):
-    """Simulates peak traffic (e.g., right after announcement)."""
-    wait_time = between(0.5, 2)
-    weight = 3  # 30% of users
-

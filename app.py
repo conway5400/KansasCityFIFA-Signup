@@ -261,7 +261,8 @@ def register_routes(app, celery):
     """Register all application routes."""
     
     @app.route('/')
-    @limiter.limit("20 per minute")
+    # Rate limiting disabled for load testing
+    # @limiter.limit("20 per minute")
     @cache.cached(timeout=300, key_prefix='form_config')
     def index():
         """Display signup form with cached configuration."""
@@ -291,7 +292,8 @@ def register_routes(app, celery):
             return render_template('error.html'), 500
     
     @app.route('/signup', methods=['POST'])
-    @limiter.limit("5 per minute")  # Stricter limit for form submissions
+    # Rate limiting disabled for load testing
+    # @limiter.limit("5 per minute")  # Stricter limit for form submissions
     def signup():
         """Process signup form submission."""
         try:
@@ -366,7 +368,8 @@ def register_routes(app, celery):
             return render_template('error.html'), 500
     
     @app.route('/success/<int:signup_id>')
-    @limiter.limit("10 per minute")
+    # Rate limiting disabled for load testing
+    # @limiter.limit("10 per minute")
     def success(signup_id):
         """Display success page."""
         try:
@@ -411,7 +414,8 @@ def register_routes(app, celery):
     
     # Admin Routes
     @app.route('/admin/login', methods=['GET', 'POST'])
-    @limiter.limit("10 per minute")
+    # Rate limiting disabled for load testing
+    # @limiter.limit("10 per minute")
     def admin_login():
         """Admin login page."""
         if session.get('admin_logged_in'):
@@ -438,7 +442,8 @@ def register_routes(app, celery):
     
     @app.route('/admin/dashboard')
     @admin_required
-    @limiter.limit("30 per minute")
+    # Rate limiting disabled for load testing
+    # @limiter.limit("30 per minute")
     def admin_dashboard():
         """Admin dashboard showing all signups."""
         try:

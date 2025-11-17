@@ -100,21 +100,26 @@ def create_app(config_name=None):
 
 def make_celery(app):
     """Create Celery instance for async processing."""
-    broker_url = app.config['CELERY_BROKER_URL']
-    result_backend = app.config['CELERY_RESULT_BACKEND']
-    
     # Handle SSL Redis URLs (rediss://) for Heroku
     # Celery requires ssl_cert_reqs parameter for SSL Redis connections
     def add_ssl_cert_reqs(url):
         """Add ssl_cert_reqs parameter to rediss:// URLs if not present."""
-        if url.startswith('rediss://'):
+        if url and url.startswith('rediss://'):
             if 'ssl_cert_reqs' not in url:
                 separator = '&' if '?' in url else '?'
                 url = url + separator + 'ssl_cert_reqs=CERT_NONE'
         return url
     
+    # Update config with SSL parameters before creating Celery
+    broker_url = app.config['CELERY_BROKER_URL']
+    result_backend = app.config['CELERY_RESULT_BACKEND']
+    
     broker_url = add_ssl_cert_reqs(broker_url)
     result_backend = add_ssl_cert_reqs(result_backend)
+    
+    # Update config dict so Celery reads the modified URLs
+    app.config['CELERY_BROKER_URL'] = broker_url
+    app.config['CELERY_RESULT_BACKEND'] = result_backend
     
     celery = Celery(
         app.import_name,

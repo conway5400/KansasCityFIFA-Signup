@@ -14,7 +14,7 @@
                     </svg>
                 </div>
             </div>
-            <h2 class="success-title">You're All Set! 🎉</h2>
+            <h2 class="success-title">You're All Set!</h2>
             <p class="success-subtitle">
                 Thanks {{ signup.name }}! Your registration for the Kansas City FIFA Fan Fest is confirmed.
             </p>
@@ -60,188 +60,33 @@
         <!-- Next Steps -->
         <div class="next-steps">
             <h3>What Happens Next?</h3>
-            <div class="steps-grid">
-                <div class="step-card">
-                    <div class="step-number">1</div>
-                    <div class="step-content">
-                        <h4>Confirmation</h4>
-                        <p>{% if signup.phone %}We've sent you a confirmation text message.{% else %}Check your email for confirmation details.{% endif %}</p>
-                    </div>
-                </div>
-                
-                <div class="step-card">
-                    <div class="step-number">2</div>
-                    <div class="step-content">
-                        <h4>Stay Updated</h4>
-                        <p>We'll keep you informed about event details, schedules, and any important updates.</p>
-                    </div>
-                </div>
-                
-                <div class="step-card">
-                    <div class="step-number">3</div>
-                    <div class="step-content">
-                        <h4>Get Ready</h4>
-                        <p>Mark your calendar and get ready for an amazing FIFA Fan Fest experience!</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Event Highlights -->
-        <div class="event-highlights">
-            <h3>What to Expect</h3>
-            <div class="highlights-grid">
-                <div class="highlight-item">
-                    <div class="highlight-icon">🏆</div>
-                    <h4>World Cup Atmosphere</h4>
-                    <p>Experience the excitement with fans from around the world</p>
-                </div>
-                
-                <div class="highlight-item">
-                    <div class="highlight-icon">📺</div>
-                    <h4>Giant Screen Viewing</h4>
-                    <p>Watch all the action on massive outdoor screens</p>
-                </div>
-                
-                <div class="highlight-item">
-                    <div class="highlight-icon">🎪</div>
-                    <h4>Interactive Experiences</h4>
-                    <p>Skills challenges, photo ops, and interactive games</p>
-                </div>
-                
-                <div class="highlight-item">
-                    <div class="highlight-icon">🌮</div>
-                    <h4>International Food</h4>
-                    <p>Authentic cuisine from World Cup participating countries</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Social Sharing -->
-        <div class="social-section">
-            <h3>Spread the Word!</h3>
-            <p>Help us make this the biggest FIFA Fan Fest Kansas City has ever seen!</p>
-            <div class="social-buttons">
-                <a href="https://twitter.com/intent/tweet?text=I%20just%20signed%20up%20for%20the%20Kansas%20City%20FIFA%20Fan%20Fest!%20Join%20me%20for%20an%20amazing%20World%20Cup%20experience%20%23KCFIFAFest%20%23WorldCup" 
-                   target="_blank" class="social-btn twitter" rel="noopener">
-                    <span>Share on Twitter</span>
-                </a>
-                
-                <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.url_root }}" 
-                   target="_blank" class="social-btn facebook" rel="noopener">
-                    <span>Share on Facebook</span>
-                </a>
-            </div>
+            <p class="next-steps-text">
+                {% if signup.phone %}We've sent you a confirmation text message.{% else %}Check your email for confirmation details.{% endif %}
+                We'll keep you informed about event details, schedules, and any important updates.
+            </p>
         </div>
 
         <!-- Actions -->
         <div class="action-buttons">
             <a href="{{ url_for('index') }}" class="btn btn-secondary">
-                📝 Register Another Person
+                Register Another Person
             </a>
-        </div>
-
-        <!-- Contact Info -->
-        <div class="contact-section">
-            <h4>Questions or Need Help?</h4>
-            <p>
-                If you have any questions about your registration or the event, 
-                please don't hesitate to reach out to us.
-            </p>
-            <div class="contact-methods">
-                <div class="contact-item">
-                    <strong>Email:</strong> info@kcfifafanfest.com
-                </div>
-                {% if config.TWILIO_FROM_NUMBER %}
-                <div class="contact-item">
-                    <strong>Text:</strong> {{ config.TWILIO_FROM_NUMBER }}
-                </div>
-                {% endif %}
-            </div>
         </div>
     </div>
 </div>
 
-<!-- Confetti Animation (Optional) -->
-<canvas id="confetti-canvas"></canvas>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Simple confetti animation for celebration
+    // Track success page view
     document.addEventListener('DOMContentLoaded', function() {
-        // Track success page view
         if (typeof gtag !== 'undefined') {
             gtag('event', 'signup_complete', {
                 'event_category': 'conversion',
                 'event_label': 'fifa_signup_success'
             });
         }
-        
-        // Simple confetti effect
-        const canvas = document.getElementById('confetti-canvas');
-        const ctx = canvas.getContext('2d');
-        
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        canvas.style.position = 'fixed';
-        canvas.style.top = '0';
-        canvas.style.left = '0';
-        canvas.style.pointerEvents = 'none';
-        canvas.style.zIndex = '1000';
-        
-        const particles = [];
-        const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57'];
-        
-        for (let i = 0; i < 50; i++) {
-            particles.push({
-                x: Math.random() * canvas.width,
-                y: -10,
-                vx: (Math.random() - 0.5) * 4,
-                vy: Math.random() * 3 + 2,
-                color: colors[Math.floor(Math.random() * colors.length)],
-                size: Math.random() * 5 + 3,
-                rotation: Math.random() * 360,
-                rotationSpeed: (Math.random() - 0.5) * 10
-            });
-        }
-        
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            particles.forEach(particle => {
-                particle.x += particle.vx;
-                particle.y += particle.vy;
-                particle.rotation += particle.rotationSpeed;
-                
-                ctx.save();
-                ctx.translate(particle.x, particle.y);
-                ctx.rotate(particle.rotation * Math.PI / 180);
-                ctx.fillStyle = particle.color;
-                ctx.fillRect(-particle.size/2, -particle.size/2, particle.size, particle.size);
-                ctx.restore();
-                
-                // Reset particle if it goes off screen
-                if (particle.y > canvas.height) {
-                    particle.y = -10;
-                    particle.x = Math.random() * canvas.width;
-                }
-            });
-            
-            requestAnimationFrame(animate);
-        }
-        
-        // Start animation and stop after 5 seconds
-        animate();
-        setTimeout(() => {
-            canvas.style.display = 'none';
-        }, 5000);
-        
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
     });
 </script>
 {% endblock %}

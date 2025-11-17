@@ -279,9 +279,13 @@ def register_routes(app, celery):
                 # Cache email to prevent duplicates
                 cache.set(cache_key, True, timeout=3600)  # 1 hour
                 
-                # Send SMS asynchronously if phone provided
-                if signup_data.phone:
+                # Send SMS asynchronously if phone provided and SMS is configured
+                if signup_data.phone and app.config.get('TWILIO_ACCOUNT_SID'):
                     send_sms_async.delay(signup_data.id, signup_data.phone, signup_data.name)
+                elif signup_data.phone:
+                    logger.info("sms_skipped_no_config", 
+                               signup_id=signup_data.id,
+                               message="SMS skipped - Twilio not configured")
                 
                 logger.info("signup_completed", 
                            signup_id=signup_data.id,
@@ -352,15 +356,23 @@ def register_routes(app, celery):
             
             result = send_confirmation_sms(phone_number, name)
             
-            # Update signup record
+            # If SMS was skipped (not configured), log and return gracefully
+            if result and result.get('skipped'):
+                logger.info("sms_skipped", 
+                          signup_id=signup_id, 
+                          phone=phone_number,
+                          reason=result.get('reason'))
+                return result
+            
+            # Update signup record if SMS was sent
             signup = Signup.query.get(signup_id)
-            if signup:
+            if signup and result and result.get('success'):
                 signup.sms_sent = True
                 signup.sms_sent_at = datetime.utcnow()
                 signup.sms_delivery_status = 'sent'
                 db.session.commit()
             
-            logger.info("sms_sent", signup_id=signup_id, phone=phone_number, result=result)
+            logger.info("sms_task_completed", signup_id=signup_id, phone=phone_number, result=result)
             return result
             
         except Exception as e:
@@ -372,7 +384,8 @@ def register_routes(app, celery):
                 signup.sms_delivery_status = 'failed'
                 db.session.commit()
             
-            raise
+            # Don't raise - allow task to complete gracefully
+            return {'success': False, 'error': str(e)}
 
 
 @cache.memoize(timeout=600)  # Cache for 10 minutes

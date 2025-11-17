@@ -36,11 +36,16 @@ class SMSService:
             name (str): User's name for personalization
             
         Returns:
-            dict: Result with status and message ID
+            dict: Result with status and message ID, or None if SMS not configured
         """
         if not self.client:
-            logger.error("sms_service_not_configured")
-            raise Exception("SMS service not configured")
+            logger.info("sms_service_not_configured", 
+                       message="SMS service not configured - skipping SMS send")
+            return {
+                'success': False,
+                'skipped': True,
+                'reason': 'SMS service not configured'
+            }
         
         # Clean phone number
         to_number = self.clean_phone_number(to_number)

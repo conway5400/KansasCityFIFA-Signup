@@ -105,10 +105,16 @@ def make_celery(app):
     
     # Handle SSL Redis URLs (rediss://) for Heroku
     # Celery requires ssl_cert_reqs parameter for SSL Redis connections
-    if broker_url.startswith('rediss://'):
-        broker_url = broker_url + '?ssl_cert_reqs=CERT_NONE'
-    if result_backend.startswith('rediss://'):
-        result_backend = result_backend + '?ssl_cert_reqs=CERT_NONE'
+    def add_ssl_cert_reqs(url):
+        """Add ssl_cert_reqs parameter to rediss:// URLs if not present."""
+        if url.startswith('rediss://'):
+            if 'ssl_cert_reqs' not in url:
+                separator = '&' if '?' in url else '?'
+                url = url + separator + 'ssl_cert_reqs=CERT_NONE'
+        return url
+    
+    broker_url = add_ssl_cert_reqs(broker_url)
+    result_backend = add_ssl_cert_reqs(result_backend)
     
     celery = Celery(
         app.import_name,

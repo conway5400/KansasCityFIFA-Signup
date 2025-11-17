@@ -268,11 +268,12 @@ def register_routes(app, celery):
         """Display signup form with cached configuration."""
         try:
             # Ensure session is created so Flask-WTF can store CSRF token
-            # Flask only sets session cookie when session is modified
+            # Flask only sets session cookie when session contains data
             session.permanent = True
-            # Force session modification to ensure cookie is set
+            # Store a value in session to force Flask to set the cookie
             # Flask-WTF needs the session cookie to validate CSRF tokens
-            session.modified = True
+            if 'session_initialized' not in session:
+                session['session_initialized'] = True
             
             form = SignupForm()
             

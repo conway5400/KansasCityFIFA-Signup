@@ -441,17 +441,22 @@ def register_routes(app, celery):
             
             return render_template(
                 'admin/dashboard.html',
-                signups=pagination.items,
+                signups=pagination.items if pagination else [],
                 pagination=pagination,
-                total_signups=total_signups,
-                today_signups=today_signups,
-                sms_sent_count=sms_sent_count,
-                search=search,
-                zip_filter=zip_filter
+                total_signups=total_signups or 0,
+                today_signups=today_signups or 0,
+                sms_sent_count=sms_sent_count or 0,
+                search=search or '',
+                zip_filter=zip_filter or ''
             )
         except Exception as e:
-            logger.error("admin_dashboard_error", error=str(e))
-            return render_template('error.html'), 500
+            import traceback
+            error_trace = traceback.format_exc()
+            logger.error("admin_dashboard_error", error=str(e), traceback=error_trace)
+            # Show actual error in development, generic in production
+            if app.config.get('DEBUG'):
+                return f"<h1>Admin Dashboard Error</h1><pre>{error_trace}</pre>", 500
+            return render_template('error.html', error_message=str(e)), 500
     
     @app.route('/admin/logout')
     @admin_required

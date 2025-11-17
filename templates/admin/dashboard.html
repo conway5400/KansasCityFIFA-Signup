@@ -100,7 +100,7 @@
         </table>
     </div>
 
-    {% if pagination.pages > 1 %}
+    {% if pagination and pagination.pages > 1 %}
     <div class="admin-pagination">
         {% if pagination.has_prev %}
             <a href="{{ url_for('admin_dashboard', page=pagination.prev_num, search=search, zip=zip_filter) }}" 

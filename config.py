@@ -3,6 +3,15 @@ import os
 from datetime import timedelta
 
 
+def get_database_url():
+    """Get database URL, converting postgres:// to postgresql:// for SQLAlchemy compatibility."""
+    database_url = os.environ.get('DATABASE_URL') or 'sqlite:///signup.db'
+    # Heroku uses postgres:// but SQLAlchemy needs postgresql://
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    return database_url
+
+
 class Config:
     """Base configuration with performance optimizations."""
     
@@ -10,7 +19,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
     # Database Configuration with Connection Pooling
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///signup.db'
+    SQLALCHEMY_DATABASE_URI = get_database_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_RECORD_QUERIES = False  # Disable for performance
     
@@ -37,8 +46,10 @@ class Config:
     REQUESTS_PER_HOUR = int(os.environ.get('REQUESTS_PER_HOUR', 100))
     
     # Celery Configuration for Async Processing
-    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL') or 'redis://localhost:6379/2'
-    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND') or 'redis://localhost:6379/3'
+    # Use REDIS_URL if CELERY_BROKER_URL not set (Heroku provides REDIS_URL)
+    redis_url = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
+    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL') or redis_url
+    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND') or redis_url
     CELERY_TASK_SERIALIZER = 'json'
     CELERY_RESULT_SERIALIZER = 'json'
     CELERY_ACCEPT_CONTENT = ['json']
@@ -56,7 +67,7 @@ class Config:
                                   'World Cup Viewing,Skills Challenge,Photo Booth,Food Trucks,Live Music')
     
     # Performance Settings
-    WTF_CSRF_TIME_LIMIT = timedelta(minutes=30)  # CSRF token timeout
+    WTF_CSRF_TIME_LIMIT = 1800  # CSRF token timeout in seconds (30 minutes)
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=30)
     
     # Logging Configuration

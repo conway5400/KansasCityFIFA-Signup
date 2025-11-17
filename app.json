@@ -41,6 +41,11 @@
     }
   ],
   "env": {
+    "FLASK_APP": {
+      "description": "Flask application entry point",
+      "value": "app.py",
+      "required": true
+    },
     "FLASK_ENV": {
       "description": "Flask environment (production for Heroku)",
       "value": "production",

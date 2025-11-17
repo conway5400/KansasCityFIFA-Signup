@@ -85,8 +85,9 @@ def create_app(config_name=None):
     cache.init_app(app)
     limiter.init_app(app)
     
-    # Configure Celery
+    # Configure Celery and attach to app for worker access
     celery = make_celery(app)
+    app.celery = celery  # Make accessible via app.celery
     
     # Register routes
     register_routes(app, celery)
@@ -293,7 +294,8 @@ def register_routes(app, celery):
         """Health check endpoint for load balancers."""
         try:
             # Quick database check
-            db.session.execute('SELECT 1')
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1'))
             return jsonify({'status': 'healthy', 'timestamp': datetime.utcnow().isoformat()})
         except Exception as e:
             logger.error("health_check_failed", error=str(e))

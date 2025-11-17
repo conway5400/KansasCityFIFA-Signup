@@ -1,49 +1,61 @@
+# ============================================================================
+# Core Application Dependencies (Required for Production)
+# ============================================================================
+
 # Web Framework
 Flask==3.0.0
-gunicorn==21.2.0
+gunicorn==21.2.0  # Production WSGI server for Heroku
 
 # Database
-psycopg2-binary==2.9.10
-Flask-SQLAlchemy==3.1.1
-Flask-Migrate==4.0.5
+psycopg2-binary==2.9.10  # PostgreSQL adapter (required for Heroku)
+Flask-SQLAlchemy==3.1.1  # ORM for database operations
+Flask-Migrate==4.0.5  # Database migrations (Alembic wrapper)
 
 # Caching and Message Broker
-redis==5.0.1
-Flask-Caching==2.1.0
+redis==5.0.1  # Redis client (required for caching and Celery)
+Flask-Caching==2.1.0  # Flask caching extension
 
 # Async Task Processing
-celery==5.3.4
+celery==5.3.4  # Background task queue (for async SMS sending)
 
 # SMS Service
-twilio==8.10.3
+twilio==8.10.3  # Twilio SDK for SMS functionality
 
 # Rate Limiting
-Flask-Limiter==3.5.0
+Flask-Limiter==3.5.0  # Rate limiting to prevent abuse
 
 # Environment Management
-python-dotenv==1.0.0
+python-dotenv==1.0.0  # Load environment variables from .env file
 
 # Form Handling and Validation
-Flask-WTF==1.2.1
-WTForms==3.1.1
+Flask-WTF==1.2.1  # CSRF protection and form handling
+WTForms==3.1.1  # Form validation
+email-validator==2.1.0  # Email validation
 
 # HTTP Client
-requests==2.31.0
+requests==2.31.0  # HTTP library (used by Twilio SDK)
 
-# Testing
-pytest==7.4.3
-pytest-flask==1.3.0
-pytest-cov==4.1.0
+# Production Monitoring and Logging
+structlog==23.2.0  # Structured logging
+prometheus-client==0.19.0  # Metrics collection (optional)
+sentry-sdk[flask]==1.39.1  # Error tracking and monitoring (optional)
 
-# Load Testing
-locust==2.18.3
+# ============================================================================
+# Testing Dependencies (Not Required for Production Deployment)
+# ============================================================================
 
-# Production Monitoring
-structlog==23.2.0
-prometheus-client==0.19.0
-sentry-sdk[flask]==1.39.1
+# Unit Testing Framework
+pytest==7.4.3  # Testing framework
+pytest-flask==1.3.0  # Flask testing utilities
+pytest-cov==4.1.0  # Code coverage reporting
 
-# Development Tools
-black==23.12.0
-flake8==6.1.0
-isort==5.13.2
+# Load Testing Tool (Run locally against Heroku)
+locust==2.18.3  # Load testing framework - use: locust -f tests/load_test.py --host=https://your-app.herokuapp.com
+
+# ============================================================================
+# Development Tools (Optional, for code quality)
+# ============================================================================
+
+black==23.12.0  # Code formatter
+flake8==6.1.0  # Linter
+isort==5.13.2  # Import sorter

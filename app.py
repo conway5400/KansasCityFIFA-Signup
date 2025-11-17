@@ -266,9 +266,20 @@ def register_routes(app, celery):
     def signup():
         """Process signup form submission."""
         try:
+            # Log incoming form data for debugging
+            logger.info("signup_request_received", 
+                       form_data_keys=list(request.form.keys()),
+                       events_interested_raw=request.form.getlist('events_interested'),
+                       has_csrf='csrf_token' in request.form)
+            
             form = SignupForm()
             events = get_event_options()
             form.events_interested.choices = [(event, event) for event in events]
+            
+            # Log form state before validation
+            logger.info("form_created", 
+                       choices_count=len(form.events_interested.choices),
+                       form_data=dict(request.form))
             
             if form.validate_on_submit():
                 # Check for duplicate email (with cache)
@@ -316,8 +327,13 @@ def register_routes(app, celery):
                 return render_template('index.html', form=form)
                 
         except Exception as e:
-            logger.error("signup_error", error=str(e))
+            import traceback
+            error_trace = traceback.format_exc()
+            logger.error("signup_error", error=str(e), traceback=error_trace)
             db.session.rollback()
+            # In development, show the actual error
+            if app.config.get('DEBUG'):
+                return f"<h1>Signup Error</h1><pre>{error_trace}</pre>", 500
             return render_template('error.html'), 500
     
     @app.route('/success/<int:signup_id>')

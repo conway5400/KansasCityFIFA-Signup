@@ -83,7 +83,29 @@ def create_app(config_name=None):
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
-    cache.init_app(app)
+    
+    # Configure cache with SSL handling for Heroku Redis
+    cache_config = {
+        'CACHE_TYPE': app.config.get('CACHE_TYPE', 'redis'),
+        'CACHE_DEFAULT_TIMEOUT': app.config.get('CACHE_DEFAULT_TIMEOUT', 300),
+    }
+    
+    # Handle SSL Redis URLs (rediss://) for Heroku
+    cache_redis_url = app.config.get('CACHE_REDIS_URL') or app.config.get('REDIS_URL')
+    if cache_redis_url and cache_redis_url.startswith('rediss://'):
+        # Flask-Caching needs SSL configuration for rediss:// URLs
+        # Parse the URL and add SSL parameters
+        if 'ssl_cert_reqs' not in cache_redis_url:
+            separator = '&' if '?' in cache_redis_url else '?'
+            cache_redis_url = cache_redis_url + separator + 'ssl_cert_reqs=none'
+        cache_config['CACHE_REDIS_URL'] = cache_redis_url
+        # Additional SSL configuration for Flask-Caching
+        cache_config['CACHE_REDIS_SSL_CA_CERTS'] = None
+        cache_config['CACHE_REDIS_SSL_CERT_REQS'] = 'none'
+    else:
+        cache_config['CACHE_REDIS_URL'] = cache_redis_url
+    
+    cache.init_app(app, config=cache_config)
     limiter.init_app(app)
     
     # Configure Celery and attach to app for worker access

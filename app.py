@@ -266,6 +266,10 @@ def register_routes(app, celery):
     def index():
         """Display signup form with cached configuration."""
         try:
+            # Ensure session is created so Flask-WTF can store CSRF token
+            # Flask only sets session cookie when session is modified
+            session.permanent = True
+            
             form = SignupForm()
             
             # Load event options (cached)
